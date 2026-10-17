@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contador de Trocas - War</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles to enhance the military theme */
+        body {
+            background-color: #3b4d3b; /* Military olive green base */
+            background-image: radial-gradient(#4a5e4a 1px, transparent 1px);
+            background-size: 20px 20px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .camo-panel {
+            background: linear-gradient(135deg, #2c392c 0%, #1e281e 100%);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            border: 2px solid #1a221a;
+        }
+
+        .lcd-text {
+            color: #d1fae5;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn {
+            transition: all 0.2s ease;
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 text-gray-100 selection:bg-green-900 selection:text-white">
+
+    <main class="camo-panel rounded-3xl p-6 sm:p-10 w-full max-w-md flex flex-col items-center relative overflow-hidden">
+        
+        <!-- Decorative accents -->
+        <div class="absolute top-0 left-0 w-full h-2 bg-red-700"></div>
+        <div class="absolute top-4 left-4 w-3 h-3 rounded-full bg-green-500 opacity-50"></div>
+        <div class="absolute top-4 right-4 w-3 h-3 rounded-full bg-green-500 opacity-50"></div>
+
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-wider text-center mb-2 uppercase text-gray-300">
+            WAR
+        </h1>
+        <p class="text-green-600/80 font-medium tracking-widest text-sm mb-8 uppercase">
+            Controle de Trocas
+        </p>
+
+        <!-- Display Area -->
+        <div class="w-full bg-black/40 border border-green-900/50 rounded-2xl p-6 mb-8 text-center shadow-inner">
+            <div class="mb-4">
+                <span class="block text-gray-400 text-sm sm:text-base font-semibold uppercase tracking-wider mb-1">Troca Atual</span>
+                <span id="exchangeCount" class="text-5xl sm:text-6xl font-black lcd-text">0</span>
+            </div>
+            
+            <div class="h-px w-3/4 mx-auto bg-green-900/50 my-4"></div>
+            
+            <div>
+                <span class="block text-gray-400 text-sm sm:text-base font-semibold uppercase tracking-wider mb-1">Exércitos Recebidos</span>
+                <div class="flex items-center justify-center gap-2">
+                    <span id="armiesCount" class="text-4xl sm:text-5xl font-bold text-yellow-500 text-shadow">0</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-yellow-600 mb-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="w-full flex justify-center items-center gap-4 mb-6">
+            <button onclick="decrement()" class="btn w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-800 hover:bg-red-700 text-white flex items-center justify-center shadow-lg border-b-4 border-red-950 focus:outline-none focus:ring-4 focus:ring-red-900/50" aria-label="Diminuir Troca">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4" />
+                </svg>
+            </button>
+            
+            <button onclick="increment()" class="btn w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-green-700 hover:bg-green-600 text-white flex items-center justify-center shadow-lg border-b-4 border-green-900 focus:outline-none focus:ring-4 focus:ring-green-900/50" aria-label="Avançar Troca">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Reset -->
+        <button onclick="reset()" class="btn w-full py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold tracking-widest uppercase border border-gray-600 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500">
+            Reiniciar Jogo
+        </button>
+        
+    </main>
+
+    <script>
+        // State
+        let currentExchange = 0;
+
+        // DOM Elements
+        const exchangeDisplay = document.getElementById('exchangeCount');
+        const armiesDisplay = document.getElementById('armiesCount');
+
+        // Logic for War (Grow rules)
+        function calculateArmies(exchangeNumber) {
+            if (exchangeNumber <= 0) return 0;
+            
+            const standardProgression = [0, 4, 6, 8, 10, 12, 15]; // index is exchange number
+            
+            if (exchangeNumber <= 6) {
+                return standardProgression[exchangeNumber];
+            } else {
+                // 7th onwards: 15 + (exchange - 6) * 5
+                // e.g., 7th = 15 + (1)*5 = 20
+                return 15 + ((exchangeNumber - 6) * 5);
+            }
+        }
+
+        function updateUI() {
+            exchangeDisplay.textContent = currentExchange;
+            armiesDisplay.textContent = calculateArmies(currentExchange);
+            
+            // Add a small animation effect on update
+            exchangeDisplay.classList.remove('scale-110');
+            armiesDisplay.classList.remove('scale-110');
+            
+            // Trigger reflow to restart animation
+            void exchangeDisplay.offsetWidth;
+            
+            exchangeDisplay.classList.add('transition-transform', 'duration-150');
+            armiesDisplay.classList.add('transition-transform', 'duration-150');
+            
+            if (currentExchange > 0) {
+                exchangeDisplay.classList.add('scale-110');
+                armiesDisplay.classList.add('scale-110');
+                setTimeout(() => {
+                    exchangeDisplay.classList.remove('scale-110');
+                    armiesDisplay.classList.remove('scale-110');
+                }, 150);
+            }
+        }
+
+        function increment() {
+            currentExchange++;
+            updateUI();
+        }
+
+        function decrement() {
+            if (currentExchange > 0) {
+                currentExchange--;
+                updateUI();
+            }
+        }
+
+        function reset() {
+            // Minimal custom confirm replacement
+            if(window.confirm("Tem certeza que deseja reiniciar o contador?")) {
+                currentExchange = 0;
+                updateUI();
+            }
+        }
+
+        // Initialize
+        updateUI();
+    </script>
+</body>
+</html>
